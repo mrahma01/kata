@@ -1,3 +1,5 @@
+from lrange import lrange
+
 class ProjectEular(object):
     def problem_1(self, number):
         """
@@ -28,3 +30,17 @@ class ProjectEular(object):
                 sum += a
             a, b = b, a+b
         return sum
+
+    def problem_3(self, num):
+        """
+        The prime factors of 13195 are 5, 7, 13 and 29.
+
+        What is the largest prime factor of the number 600851475143
+        """
+        result = []
+        for n in lrange(2, num):
+            while(num%n==0):
+                if(num%n==0):
+                    num = num/n
+                    result.append(n)
+        return result
