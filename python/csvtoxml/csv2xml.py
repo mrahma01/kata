@@ -5,7 +5,7 @@ from xml.dom.minidom import Document
 
 def main():
     """Main function to convert csv to xml."""
-    csvreader = CSVUtils('sample')
+    csvreader = CSVUtils('company_list')
     csvreader()
 
 class CSVUtils(object):
@@ -19,14 +19,12 @@ class CSVUtils(object):
         data = []
         for row in filecontent:
             data.append(row)
-
         data.pop(0)
         data.sort(key=itemgetter(1))
         for row in data:
             row[2] = self.getoffice(row)
             row[3] = self.getdepartment(row[1])
             row[1] = self.getcompany(row[1])
-
         self.csv2xml(data)
 
     def csv2xml(self, data):
@@ -37,17 +35,17 @@ class CSVUtils(object):
             companynode = doc.createElement('company')
             companynode.setAttribute('name', company)
             hierarchy.appendChild(companynode)
-            for item in details:
+            for office, dept in groupby(details, itemgetter(2)):
                 officenode = doc.createElement('office')
-                officenode.setAttribute('name', item[2])
-                companynode.appendChild(officenode)
-                departmentnode = doc.createElement('department')
-                departmentnode.setAttribute('id', item[0])
-                departmentnode.setAttribute('name', item[3])
-                officenode.appendChild(departmentnode)
-
+                officenode.setAttribute('name', office)
+                companynode.appendChild(officenode)             
+                for item in dept:
+                    departmentnode = doc.createElement('department')
+                    departmentnode.setAttribute('id', item[0])
+                    departmentnode.setAttribute('name', item[3])
+                    officenode.appendChild(departmentnode)
         f = open(self.filename+'.xml', 'w')
-        doc.writexml(f, addindent="    ", newl="\n")
+        doc.writexml(f, addindent="  ", newl="\n")
         f.close()
 
     def getcompany(self, name):
@@ -69,7 +67,7 @@ class CSVUtils(object):
             return self._findnextcolumn(row)
         office = office[1]
         office = office.split('Lettings')
-        if office[0]:
+        if office[0] and 'Sales' not in office[0]:
             office = office[0].replace(')','')
             return office.strip()
         else:
@@ -83,4 +81,3 @@ class CSVUtils(object):
     
 if __name__ == '__main__':
     main()
-
