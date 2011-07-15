@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<hierarchy>
+  <company name="Lord gleam shovel And Co Ltd">
+    <office name="Head Office">
+      <department id="100" name="Sales"/>
+      <department id="1000000230" name="Lettings"/>
+    </office>
+  </company>
+  <company name="abusers mat">
+    <office name="Head Office">
+      <department id="1000000453" name="Sales"/>
+      <department id="1000000212" name="Sales"/>
+    </office>
+  </company>
+  <company name="churn battleship swab laugh halt">
+    <office name="Chelsea">
+      <department id="1000000311" name="Lettings"/>
+      <department id="1000000111" name="Lettings"/>
+    </office>
+    <office name="Chelsea Short Let">
+      <department id="1000000463" name="Sales"/>
+    </office>
+    <office name="Chelsea">
+      <department id="7" name="Sales"/>
+    </office>
+    <office name="Kensington">
+      <department id="206" name="Sales"/>
+    </office>
+    <office name="West End &amp; Southbank">
+      <department id="252" name="Sales"/>
+    </office>
+    <office name="Wimbledon">
+      <department id="1000000523" name="Lettings"/>
+    </office>
+  </company>
+  <company name="gaskets promotion">
+    <office name="Head Office">
+      <department id="1000000233" name="Lettings"/>
+    </office>
+  </company>
+  <company name="output lake">
+    <office name="Chelsea">
+      <department id="1000000229" name="Lettings"/>
+    </office>
+    <office name="Kensington">
+      <department id="1000000231" name="Lettings"/>
+    </office>
+  </company>
+  <company name="path responsibility">
+    <office name="Burnt Oak">
+      <department id="1000000235" name="Sales"/>
+    </office>
+  </company>
+  <company name="primitives">
+    <office name="Edgware">
+      <department id="1000000232" name="Sales"/>
+    </office>
+  </company>
+  <company name="reconfigurations magnetos">
+    <office name="Head Office">
+      <department id="1000000454" name="Sales"/>
+    </office>
+    <office name="Battersea">
+      <department id="1000000226" name="Lettings"/>
+    </office>
+  </company>
+  <company name="swaps bypasses buys">
+    <office name="Chelsea">
+      <department id="1000000236" name="Lettings"/>
+    </office>
+  </company>
+</hierarchy>

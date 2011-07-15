@@ -1,0 +1,27 @@
+LOG:  database system was shut down at 2011-07-15 17:37:41 BST
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+FATAL:  database "mydb" does not exist
+LOG:  could not bind IPv4 socket: Address already in use
+HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+LOG:  could not bind IPv6 socket: Address already in use
+HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+LOG:  could not bind IPv6 socket: Address already in use
+HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+WARNING:  could not create listen socket for "localhost"
+FATAL:  could not create any TCP/IP sockets
+FATAL:  database "mydb" does not exist
+LOG:  received smart shutdown request
+LOG:  autovacuum launcher shutting down
+LOG:  shutting down
+LOG:  database system is shut down
+LOG:  database system was shut down at 2011-07-15 17:42:41 BST
+LOG:  autovacuum launcher started
+LOG:  database system is ready to accept connections
+FATAL:  database "mydb" does not exist
+FATAL:  lock file "postmaster.pid" already exists
+HINT:  Is another postmaster (PID 27319) running in data directory "/usr/local/pgsql/data"?
+LOG:  received smart shutdown request
+LOG:  autovacuum launcher shutting down
+LOG:  shutting down
+LOG:  database system is shut down

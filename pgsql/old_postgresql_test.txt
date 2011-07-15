@@ -1,0 +1,67 @@
+Test B: Date Work in Postgresql >=8.3, using plpgsql functions.
+
+1. Develop a plpgsql function to calculate the days in any particular
+   month specified as (month, year)
+   If year is not specified (passed through as NULL), then the current
+   year should be used.
+
+   The output format should be
+
+       Monday, 02 October 2006
+       Tuesday, 03 October 2006
+       etc
+
+2. Develop a plpgsql function to return the time delta between two
+   specified timestamps, with output formats that can be chosen
+
+   example input:
+
+   Input ('2004-01-02 00:02:34', '2005-02-01 00:20:34', 'days')
+   or
+   Input ('2004-01-02 00:02:34', '2005-02-01 00:20:34', 'seconds')
+   or
+   Input ('2004-01-02 00:02:34', '2005-02-01 00:20:34', 'default')
+
+   Please choose a sensible default output format.
+
+3. Insert some dates in a table and then develop a plpgsql function to
+   return the maximum, minimum and median dates from the table.
+
+4. Describe how Postgresql 8.4 changes to dealing with dates can cause
+   problems with code written in previous versions.
+
+5. Create a second table with some matching dates.
+   Develop a plpgsql function to show each date in the second table,
+   showing in another column of output the number of times the date in
+   the other table occurs. Ensure that all rows in the second table are
+   shown, with 0 in the second column where necessary.
+
+6. Using the second table develop a plpgsql all rows that have no match
+   in the first table.
+
+7. Against one of the two tables use a generate series date function to
+   show all the missing dates in a date series which match a day in the
+   week. The function should be called with the start and end dates of
+   the series and the day of the week that we wish to return
+
+   Example: table A has the following dates:
+   2010-01-25 (Monday)
+   2010-02-08 (Monday)
+   2010-02-10 (Wednesday)
+   2010-02-22 (Monday)
+
+   calling fn_missing_days ('2010-1-20', '2010-2-28', 'Monday') would
+   return
+   2010-02-01
+   2010-02-15
+   2010-02-22
+
+8. Show that you can do a subselect within a plpgsql query.
+
+9. Write a plpgsql function with a working PERFORM statement, which
+   raises a DEBUG statement if it fails, which you can see in your log
+   file.
+
+10. Show that you understand IF NOT FOUND in plpgsql.
+
+
