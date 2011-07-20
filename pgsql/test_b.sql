@@ -30,3 +30,25 @@ BEGIN
     END IF;
 END;    
 $$ LANGUAGE plpgsql;
+
+CREATE TABLE tbl1 (
+    event date
+);
+insert into tbl1 values('2009-02-01');
+insert into tbl1 values('2008-02-01');
+insert into tbl1 values('2009-01-03');
+insert into tbl1 values('2010-02-01');
+insert into tbl1 values('2009-12-01');
+insert into tbl1 values('2009-02-11');
+insert into tbl1 values('2011-02-01');
+insert into tbl1 values('2011-07-17');
+insert into tbl1 values('2007-05-03');
+
+CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF DATE as $$
+BEGIN
+     RETURN NEXT min(event) from tbl1;
+     RETURN NEXT max(event) from tbl1;
+     RETURN NEXT max(event) - age(max(event), min(event))/2 from tbl1;
+     
+END;
+$$ LANGUAGE plpgsql;
