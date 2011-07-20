@@ -16,15 +16,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION time_delta_diff(timestamp, timestamp) RETURNS 
-                                                interval AS $$
+CREATE OR REPLACE FUNCTION time_delta_diff(timestamp, timestamp, varchar)                                                         RETURNS int AS $$
 DECLARE
-    a varchar;
-    b varchar;
+    duration interval;
 BEGIN
-    a := ''''||$2||'''';
-    b := ''''||$1||'''';
-    RAISE NOTICE '%', a;
-    return age($2 , $1);
+    duration := age($2 , $1);
+    IF $3 = 'seconds' THEN
+        return EXTRACT('epoch' FROM duration) AS seconds;
+    ELSEIF $3 = 'days' THEN
+        return floor(EXTRACT('epoch' FROM duration)/86400);
+    ELSE
+        return duration as default;
+    END IF;
 END;    
 $$ LANGUAGE plpgsql;
