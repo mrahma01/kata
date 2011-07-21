@@ -59,3 +59,18 @@ BEGIN
      
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TABLE IF EXISTS tbl2;
+CREATE TABLE tbl2 (
+    event date
+);
+insert into tbl2 values('2009-02-01');
+insert into tbl2 values('2010-12-15');
+insert into tbl2 values('2009-01-03');
+insert into tbl2 values('2010-02-01');
+insert into tbl2 values('2005-02-01');
+insert into tbl2 values('2009-02-11');
+insert into tbl2 values('2011-07-11');
+insert into tbl2 values('2011-07-17');
+insert into tbl2 values('2008-05-03');
+
