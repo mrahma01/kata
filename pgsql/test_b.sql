@@ -27,10 +27,11 @@ BEGIN
         return floor(EXTRACT('epoch' FROM duration)/86400);
     ELSE
         return duration as default;
+  
     END IF;
 END;    
 $$ LANGUAGE plpgsql;
-
+DROP TABLE IF EXISTS tbl1;
 CREATE TABLE tbl1 (
     event date
 );
@@ -45,10 +46,16 @@ insert into tbl1 values('2011-07-17');
 insert into tbl1 values('2007-05-03');
 
 CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF DATE as $$
+DECLARE
+    median timestamp;
 BEGIN
-     RETURN NEXT min(event) from tbl1;
-     RETURN NEXT max(event) from tbl1;
-     RETURN NEXT max(event) - age(max(event), min(event))/2 from tbl1;
+    RETURN NEXT min(event) from tbl1;
+    RETURN NEXT max(event) from tbl1;
+    median = max(event) - age(max(event), min(event))/2 from tbl1;
+    RETURN NEXT event from tbl1 
+                where abs(date_part('day', event - median)) = 
+                (select abs(date_part('day', event - median)) 
+                as day from tbl1 order by day limit 1);
      
 END;
 $$ LANGUAGE plpgsql;
