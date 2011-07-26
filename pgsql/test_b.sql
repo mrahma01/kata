@@ -39,7 +39,7 @@ insert into tbl1 values('2009-02-01');
 insert into tbl1 values('2008-02-01');
 insert into tbl1 values('2009-01-03');
 insert into tbl1 values('2010-02-01');
-insert into tbl1 values('2009-12-01');
+insert into tbl1 values('2010-02-01');
 insert into tbl1 values('2009-02-11');
 insert into tbl1 values('2011-02-01');
 insert into tbl1 values('2011-07-17');
@@ -74,3 +74,29 @@ insert into tbl2 values('2011-07-11');
 insert into tbl2 values('2011-07-17');
 insert into tbl2 values('2008-05-03');
 
+DROP TYPE IF EXISTS newtbl CASCADE;
+CREATE TYPE newtbl AS
+   (event_date date,
+    occournaces bigint);
+
+CREATE OR REPLACE FUNCTION join_tbls() RETURNS SETOF newtbl AS $$
+DECLARE
+    row RECORD;
+BEGIN
+    RETURN query
+        select tbl2.event as f1, count(tbl1.event) as f2 from tbl2
+        left join tbl1
+        on tbl2.event=tbl1.event group by tbl2.event;
+
+    RETURN;
+END;
+$$ LANGUAGE plpgsql stable;
+
+CREATE OR REPLACE FUNCTION no_match() RETURNS SETOF tbl2 
+                                                                   AS $$
+BEGIN
+    RETURN QUERY 
+        select tbl2.event from tbl2 left join tbl1 on tbl2.event=tbl1.event         where tbl1.event is NULL;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
