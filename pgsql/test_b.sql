@@ -1,18 +1,23 @@
+DROP TYPE IF EXISTS days CASCADE;
+CREATE TYPE days AS
+   (day_in_month text);
+
 CREATE OR REPLACE FUNCTION day_in_month(month int, y int DEFAULT NULL) 
-                                                   RETURNS char AS $$
+                                        RETURNS SETOF days AS $$
 DECLARE
     today varchar;
 BEGIN
     IF y is NULL THEN
         today := extract(year from now()) || 
-                         '-' || $1 || '-' || 
-                          extract(day from now());
+                         '-' || $1 || '-' || '01';
     ELSE 
-        today := y || '-' || $1 || '-' || extract(day from now());
-        RAISE NOTICE '%', today;
+        today := y || '-' || $1 || '-' || '01';
 
     END IF;        
-    return to_char(to_date(today, 'yyyy-mm-dd'), 'Day, dd Month yyyy');
+
+    return query 
+        select to_char(today::date + s.a,'Day, dd Month yyyy') as dates from  generate_series(0,30,1) as s(a);
+    return;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -92,8 +97,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql stable;
 
-CREATE OR REPLACE FUNCTION no_match() RETURNS SETOF tbl2 
-                                                                   AS $$
+CREATE OR REPLACE FUNCTION no_match() RETURNS SETOF tbl2 AS $$
 BEGIN
     RETURN QUERY 
         select tbl2.event from tbl2 left join tbl1 on tbl2.event=tbl1.event         where tbl1.event is NULL;
