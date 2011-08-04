@@ -52,20 +52,36 @@ insert into tbl1 values('2007-05-03');
 
 CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF DATE as $$
 DECLARE
-    median timestamp;
+    total integer;
+    lower_median date;
+    higher_median date;
 BEGIN
+    total := count(*) from tbl1;
     RETURN NEXT min(event) from tbl1;
     RETURN NEXT max(event) from tbl1;
-    median = max(event) - age(max(event), min(event))/2 from tbl1;
-    RETURN NEXT event from tbl1 
-                where abs(date_part('day', event - median)) = 
-                (select abs(date_part('day', event - median)) 
-                as day from tbl1 order by day limit 1);
-     
+    if mod(total, 2) = 1 then
+        RETURN NEXT event from 
+            (select row_number() 
+            over (order by event) as row, event
+            from tbl1) as tableone
+            where row=(select count(*)/2+1 from tbl1);
+    else 
+        lower_median := event from 
+            (select row_number() 
+            over (order by event) as row, event
+            from tbl1) as tableone
+            where row=(select count(*)/2 from tbl1);
+        higher_median := event from 
+            (select row_number() 
+            over (order by event) as row, event
+            from tbl1) as tableone
+            where row=(select count(*)/2+1 from tbl1);            
+        RETURN NEXT lower_median + age(higher_median, lower_median)/2;
+    end if;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TABLE IF EXISTS tbl2;
+DROP TABLE IF EXISTS tbl2 CASCADE;
 CREATE TABLE tbl2 (
     event date
 );
