@@ -1,6 +1,6 @@
 DROP TYPE IF EXISTS days CASCADE;
 CREATE TYPE days AS
-   (day_in_month text);
+   (days text);
 
 CREATE OR REPLACE FUNCTION day_in_month(month int, y int DEFAULT NULL) 
                                         RETURNS SETOF days AS $$
@@ -88,12 +88,16 @@ CREATE TABLE tbl2 (
 insert into tbl2 values('2009-02-01');
 insert into tbl2 values('2010-12-15');
 insert into tbl2 values('2009-01-03');
-insert into tbl2 values('2010-02-01');
 insert into tbl2 values('2005-02-01');
 insert into tbl2 values('2009-02-11');
 insert into tbl2 values('2011-07-11');
 insert into tbl2 values('2011-07-17');
 insert into tbl2 values('2008-05-03');
+insert into tbl2 values('2010-02-22');
+insert into tbl2 values('2010-02-10');
+insert into tbl2 values('2010-02-08');
+insert into tbl2 values('2010-01-25');
+
 
 DROP TYPE IF EXISTS newtbl CASCADE;
 CREATE TYPE newtbl AS
@@ -117,6 +121,27 @@ CREATE OR REPLACE FUNCTION no_match() RETURNS SETOF tbl2 AS $$
 BEGIN
     RETURN QUERY 
         select tbl2.event from tbl2 left join tbl1 on tbl2.event=tbl1.event         where tbl1.event is NULL;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TYPE IF EXISTS dates CASCADE;
+CREATE TYPE dates AS
+   (dates date);
+
+CREATE OR REPLACE FUNCTION missing_days(start_date date, end_date date,
+                                day varchar) RETURNS SETOF dates AS $$
+DECLARE
+    days integer;
+BEGIN
+    days := time_delta_diff(start_date, end_date, 'days');
+    RETURN query
+        select series.date from (select generate_series(0,days) + 
+        start_date as date,to_char(generate_series(0,days) + 
+        start_date, 'Day') as day_name) as series 
+        left join tbl2
+        on series.date = tbl2.event
+        where tbl2.event is NULL and series.day_name Like $3||'%';
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
