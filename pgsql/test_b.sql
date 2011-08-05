@@ -151,7 +151,7 @@ CREATE OR REPLACE FUNCTION perform_check(data date) RETURNS boolean AS $$
 BEGIN
     PERFORM * from tbl2 where event=data;
     if not found then
-        raise log 'not found';
+        raise debug 'not found';
     end if;
     return found;
 END;
