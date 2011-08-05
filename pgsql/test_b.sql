@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION day_in_month(month int, y int DEFAULT NULL)
                                         RETURNS SETOF days AS $$
 DECLARE
     today varchar;
+    month integer;
 BEGIN
     IF y is NULL THEN
         today := extract(year from now()) || 
@@ -14,9 +15,9 @@ BEGIN
         today := y || '-' || $1 || '-' || '01';
 
     END IF;        
-
+    select into month DATE_PART('days', DATE_TRUNC('month', today::date) + '1 MONTH'::INTERVAL - DATE_TRUNC('month', today::date));
     return query 
-        select to_char(today::date + s.a,'Day, dd Month yyyy') as dates from  generate_series(0,30,1) as s(a);
+        select to_char(today::date + s.a,'Day, dd Month yyyy') as dates from  generate_series(1,(month-1),1) as s(a);
     return;
 END;
 $$ LANGUAGE plpgsql;
@@ -134,7 +135,7 @@ CREATE OR REPLACE FUNCTION missing_days(start_date date, end_date date,
 DECLARE
     days integer;
 BEGIN
-    days := time_delta_diff(start_date, end_date, 'days');
+    select into days time_delta_diff(start_date, end_date, 'days');
     RETURN query
         select series.date from (select generate_series(0,days) + 
         start_date as date,to_char(generate_series(0,days) + 
@@ -145,3 +146,14 @@ BEGIN
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION perform_check(data date) RETURNS boolean AS $$
+BEGIN
+    PERFORM * from tbl2 where event=data;
+    if not found then
+        raise log 'not found';
+    end if;
+    return found;
+END;
+$$ LANGUAGE plpgsql stable;
+
