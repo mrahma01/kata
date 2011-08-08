@@ -1,0 +1,79 @@
+Test: Postgresql >=8.3, using plpgsql functions
+===============================================
+
+Synopsis: A video rental store has commissioned you to create a back-end
+solution to their rental software. 
+
+The store has a listing of customers, movies and present and historical rental
+records for each customer.
+
+1. Create a suitable database schema that meets the following requirements:
+
+	i) Each customer has a first and last name, age, and unique account number.
+
+	ii) Each movie has a title, associated genre and parental guidance age
+		rating.
+
+	iii) The store would like to maintain a record of each rental transaction
+		 made. Each record should show which movie was rented, by whom, at what
+		 time (Timestamp), the expected return time (Timestamp), and the
+		 timestamp of when it was eventually returned (if applicable).
+
+	iv) The store has requested that current rentals are separated from
+		historical rentals such that the later can be archived easily. Current
+		rentals should only contain a listing of "checkouts" that have not been
+		superseded. The store has stated that a rental is superseded when a
+		customer rents another movie of the same genre if said rental has been
+		returned.
+
+2. Write a Postgresql function that inserts a new rental record. The function
+should make use of "IF NOT FOUND" to action a PERFORM statement if the customer
+account number does not exist. Should this scenario arise the PERFORM statement
+should add a generic entry (to be filled out later) with the non-existent
+number into the customer table. The PERFORM statement should fail if the
+provided account number is less than three digits in which case the function
+should raise a DEBUG statement which you can see in your log file.
+
+3. Show that you can use a trigger on current rentals to "archive" superseded
+rentals to a historical table as new inserts are made.
+
+4. The store often has promotional offers, allowing customers to keep movies
+for a longer period of time. Write a function that returns the time delta
+between the checkout Timestamp and the expected return time of current rentals.
+The output format should be configurable.
+
+Example formats:
+
+Input - 'days' or  'seconds' or 'default'
+
+Please choose a sensible default output format.
+
+5. Casting the checkout times as dates, develop a PostgreSQL function that
+returns the maximum, minimum and median dates from the current rentals table.
+
+6. Develop a PostgreSQL function that returns the count of currently
+checked-out movies, by genre, that have been rented by customers that are
+younger than the suggested parental guidance rating and are overdue.
+
+7. The store would like to know, for a given period, on what days it has not
+rented any movies of a specific genre. This should exclude dates that fall on
+bank holidays (contained in separate table) as the store is not open on said
+holidays. As the query can be made retrospectively, the function should inspect
+historical as well as current checkouts. Using generate_series, return the
+list of dates in the following format: Monday, 02 October 2006. If no period is
+specified the period should default to the current year.
+
+8. The video store has a promotion on "family" genre movies every Tuesday and
+Wednesday. The store manager would like to know, for a given period, how many
+"family" movies were rented on the promotional days. Write a PostgreSQL
+function that returns all Tuesdays and Wednesdays for the given period (using
+generate_series) and the associated number of family rentals made on the
+generated dates. Ensure that all generated dates are shown, with 0 in the
+second column where necessary.
+
+9. Describe how Postgresql 8.4 changes to dealing with dates can cause problems
+with code written in previous versions.
+
+10. Write a query using the created schema to demonstrate that you can use a
+sub-select in PostgreSQl. Extra point for complexity of function!
+
