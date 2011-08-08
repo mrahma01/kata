@@ -1,15 +1,15 @@
 DROP TABLE IF EXISTS customer CASCADE;
 CREATE TABLE customer (
-    id serial primary key,
+    id char(10) primary key CHECK (char_length(id) >= 3),
     fname varchar(30),
     lname varchar(30),
     age integer
 );
-insert into customer(fname, lname, age) values('Argotte', 'Javier', 28);
-insert into customer(fname, lname, age) values('Blair', 'Tony', 31);
-insert into customer(fname, lname, age) values('Obama', 'Barack', 15);
-insert into customer(fname, lname, age) values('Jobs', 'Steve', 11);
-insert into customer(fname, lname, age) values('Gates', 'Bill', 13);
+insert into customer values('111','Argotte', 'Javier', 28);
+insert into customer values('222', 'Blair', 'Tony', 31);
+insert into customer values('333', 'Obama', 'Barack', 15);
+insert into customer values('444', 'Jobs', 'Steve', 11);
+insert into customer values('555', 'Gates', 'Bill', 13);
 
 
 DROP TABLE IF EXISTS genre CASCADE;
@@ -54,16 +54,16 @@ insert into movie values('Notebook', 'Romance', '12A');
 DROP TABLE IF EXISTS current_rentals;
 CREATE TABLE current_rentals(
     title varchar(100) references movie(title),
-    id serial references customer(id),
+    id char(10) references customer(id),
     rent_date timestamp,
     expected_return timestamp,
     actual_return timestamp NULL
 );
-insert into current_rentals values('The Matrix', 1, '2011-08-08','2011-08-18');
-insert into current_rentals values('Saw', 2, '2011-08-08','2011-08-18');
-insert into current_rentals values('Kung Fu Panda', 3, '2011-08-08','2011-08-18');
-insert into current_rentals values('Die Hard', 4, '2011-08-08','2011-08-18');
-insert into current_rentals values('Notting Hill', 5, '2011-08-08','2011-08-18');
+insert into current_rentals values('The Matrix', '111', '2011-08-08','2011-08-18');
+insert into current_rentals values('Saw', '222', '2011-08-08','2011-08-18');
+insert into current_rentals values('Kung Fu Panda', '333', '2011-08-08','2011-08-18');
+insert into current_rentals values('Die Hard', '444', '2011-08-08','2011-08-18');
+insert into current_rentals values('Notting Hill', '555', '2011-08-08','2011-08-18');
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
