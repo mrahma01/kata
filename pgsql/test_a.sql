@@ -67,3 +67,20 @@ insert into current_rentals values('Notting Hill', '555', '2011-08-08','2011-08-
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
+
+CREATE OR REPLACE FUNCTION insert_rentals(
+    title varchar,
+    cust char,
+    rent_date timestamp,
+    expected_return timestamp,
+    actual_return timestamp DEFAULT NULL
+) RETURNS void as $$
+BEGIN
+    PERFORM * from customer where id = cust;
+    IF NOT FOUND THEN
+        INSERT INTO customer (id) values(cust);
+    END IF;
+    insert into current_rentals values(title, cust, rent_date, expected_return, actual_return);
+
+END;
+$$ LANGUAGE plpgsql;
