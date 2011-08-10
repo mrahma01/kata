@@ -78,7 +78,13 @@ CREATE OR REPLACE FUNCTION insert_rentals(
 BEGIN
     PERFORM * from customer where id = cust;
     IF NOT FOUND THEN
-        INSERT INTO customer (id) values(cust);
+        BEGIN
+            INSERT INTO customer (id) values(cust);
+        EXCEPTION 
+            WHEN check_violation THEN
+                RAISE DEBUG 'Customer id less then three char length';
+            RETURN;
+        END;
     END IF;
     insert into current_rentals values(title, cust, rent_date, expected_return, actual_return);
 
