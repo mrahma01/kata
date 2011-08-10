@@ -37,7 +37,7 @@ insert into pg_rating values('18R');
 DROP TABLE IF EXISTS movie CASCADE;
 CREATE TABLE movie (
     title varchar(100) PRIMARY KEY,
-    name varchar(50) references genre(name),
+    genre varchar(50) references genre(name),
     rating varchar(10) references pg_rating(rating)
 );
 insert into movie values('The Matrix', 'Science Fiction', '12');
@@ -72,8 +72,7 @@ CREATE OR REPLACE FUNCTION insert_rentals(
     title varchar,
     cust char,
     rent_date timestamp,
-    expected_return timestamp,
-    actual_return timestamp DEFAULT NULL
+    expected_return timestamp
 ) RETURNS void as $$
 BEGIN
     PERFORM * from customer where id = cust;
@@ -86,7 +85,20 @@ BEGIN
             RETURN;
         END;
     END IF;
+    --select cr.title from current_rentals cr join movie on cr.title=movie.title join genre on movie.genre=genre.name where genre.name=(select genre from movie where title='My Bloody Valentine') and cr.actual_return NOTNULL;
+
+
     insert into current_rentals values(title, cust, rent_date, expected_return, actual_return);
 
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION return_rentals(
+    movie_title varchar,
+    cust char,
+    return_date timestamp
+) RETURNS void as $$
+BEGIN
+    UPDATE current_rentals set actual_return = return_date where title = movie_title and id = cust;
 END;
 $$ LANGUAGE plpgsql;
