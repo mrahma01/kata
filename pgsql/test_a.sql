@@ -68,7 +68,7 @@ insert into current_rentals values('Notting Hill', '555', '2011-08-08','2011-08-
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
 
-CREATE OR REPLACE FUNCTION insert_rentals(
+CREATE OR REPLACE FUNCTION new_rental(
     title varchar,
     cust char,
     rent_date timestamp,
@@ -85,10 +85,8 @@ BEGIN
             RETURN;
         END;
     END IF;
-    --select cr.title from current_rentals cr join movie on cr.title=movie.title join genre on movie.genre=genre.name where genre.name=(select genre from movie where title='My Bloody Valentine') and cr.actual_return NOTNULL;
 
-
-    insert into current_rentals values(title, cust, rent_date, expected_return, actual_return);
+    insert into current_rentals values(title, cust, rent_date, expected_return);
 
 END;
 $$ LANGUAGE plpgsql;
@@ -102,3 +100,32 @@ BEGIN
     UPDATE current_rentals set actual_return = return_date where title = movie_title and id = cust;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION archive_rentals() RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM cr.title from current_rentals cr join movie 
+    on cr.title=movie.title join genre 
+    on movie.genre=genre.name 
+    where genre.name = 
+    (select genre from movie 
+        where title=NEW.title) and cr.actual_return NOTNULL;
+    IF FOUND THEN
+        insert into historical_rentals
+        (title,id,rent_date,expected_return,actual_return) 
+        select cr.title,cr.id, cr.rent_date, cr.expected_return,
+        cr.actual_return from current_rentals cr
+        join movie 
+        on cr.title=movie.title 
+        join genre
+        on movie.genre=genre.name
+        where genre.name = (select genre from movie where title=NEW.title)
+            and cr.id = NEW.id
+            and cr.actual_return NOTNULL;
+    END IF;
+    RETURN NEW;
+END;    
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER supersed_current_rentals
+    AFTER INSERT ON current_rentals
+    FOR EACH ROW EXECUTE PROCEDURE archive_rentals();
