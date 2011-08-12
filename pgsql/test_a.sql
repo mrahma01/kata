@@ -91,7 +91,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION return_rentals(
+CREATE OR REPLACE FUNCTION return_rental(
     movie_title varchar,
     cust char,
     return_date timestamp
@@ -101,7 +101,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION archive_rentals() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION archive_rental() RETURNS TRIGGER AS $$
 BEGIN
     PERFORM cr.title from current_rentals cr join movie 
     on cr.title=movie.title join genre 
@@ -126,6 +126,35 @@ BEGIN
 END;    
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER supersed_current_rentals
+CREATE TRIGGER supersed_current_rental
     AFTER INSERT ON current_rentals
     FOR EACH ROW EXECUTE PROCEDURE archive_rentals();
+
+DROP type time_delta CASCADE;
+CREATE TYPE time_delta AS
+    (duration double precision);
+
+CREATE OR REPLACE FUNCTION current_rentals_time_delta(varchar) 
+                                RETURNS SETOF time_delta AS $$
+BEGIN
+    IF $1 = 'seconds' THEN
+        RETURN query
+        select extract('epoch'
+        from age(cr.expected_return, cr.rent_date)) 
+        from current_rentals as cr;
+        RETURN;
+    ELSEIF $1 = 'days' THEN
+        RETURN query
+        select extract('epoch' 
+        from age(cr.expected_return, cr.rent_date)/86400) 
+        from current_rentals as cr;
+        RETURN;
+    ELSEIF $1 = 'default' THEN
+        RETURN query
+        select extract('epoch' 
+        from age(cr.expected_return, cr.rent_date)/3600) 
+        from current_rentals as cr;
+        RETURN;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

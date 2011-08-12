@@ -33,7 +33,6 @@ BEGIN
         return floor(EXTRACT('epoch' FROM duration)/86400);
     ELSE
         return duration as default;
-  
     END IF;
 END;    
 $$ LANGUAGE plpgsql;
