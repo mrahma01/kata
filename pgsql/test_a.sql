@@ -55,14 +55,15 @@ DROP TABLE IF EXISTS current_rentals;
 CREATE TABLE current_rentals(
     title varchar(100) references movie(title),
     id char(10) references customer(id),
-    rent_date timestamp,
+    checkout timestamp,
     expected_return timestamp,
     actual_return timestamp NULL
 );
-insert into current_rentals values('The Matrix', '111', '2011-08-08','2011-08-18');
-insert into current_rentals values('Saw', '222', '2011-08-08','2011-08-18');
-insert into current_rentals values('Kung Fu Panda', '333', '2011-08-08','2011-08-18');
-insert into current_rentals values('Die Hard', '444', '2011-08-08','2011-08-18');
+insert into current_rentals values('The Matrix', '111', '2009-02-01','2011-08-18');
+insert into current_rentals values('Saw', '222', '2008-02-01','2011-08-18');
+insert into current_rentals values('Kung Fu Panda', '333', '2010-02-01','2011-08-18');
+insert into current_rentals values('Die Hard', '444', '2011-02-01','2011-08-18');
+insert into current_rentals values('Notting Hill', '555', '2011-08-08','2011-08-18');
 insert into current_rentals values('Notting Hill', '555', '2011-08-08','2011-08-18');
 
 DROP TABLE IF EXISTS historical_rentals;
@@ -140,21 +141,53 @@ BEGIN
     IF $1 = 'seconds' THEN
         RETURN query
         select extract('epoch'
-        from age(cr.expected_return, cr.rent_date)) 
+        from age(cr.expected_return, cr.checkout)) 
         from current_rentals as cr;
         RETURN;
     ELSEIF $1 = 'days' THEN
         RETURN query
-        select extract('epoch' 
-        from age(cr.expected_return, cr.rent_date)/86400) 
+        select round(extract('epoch' 
+        from age(cr.expected_return, cr.checkout)/86400)) 
         from current_rentals as cr;
         RETURN;
     ELSEIF $1 = 'default' THEN
         RETURN query
         select extract('epoch' 
-        from age(cr.expected_return, cr.rent_date)/3600) 
+        from age(cr.expected_return, cr.checkout)/3600) 
         from current_rentals as cr;
         RETURN;
     END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF DATE as $$
+DECLARE
+    total integer;
+    lower_median date;
+    higher_median date;
+BEGIN
+    total := count(*) from current_rentals;
+    RETURN NEXT min(date(checkout)) from current_rentals;
+    RETURN NEXT max(date(checkout)) from current_rentals;
+    if mod(total, 2) = 1 then
+        RETURN NEXT date(checkout) 
+            from (select row_number() 
+            over (order by checkout) as row, checkout
+            from current_rentals) as tableone
+            where row=(select count(*)/2+1 from current_rentals);
+        
+    else 
+        lower_median := date(checkout) 
+            from (select row_number() 
+            over (order by checkout) as row, checkout
+            from current_rentals) as tableone
+            where row=(select count(*)/2 from current_rentals);
+        higher_median := date(checkout) 
+            from (select row_number() 
+            over (order by checkout) as row, checkout
+            from current_rentals) as tableone
+            where row=(select count(*)/2+1 from current_rentals);            
+        RETURN NEXT lower_median + age(higher_median, lower_median)/2;
+    end if;
 END;
 $$ LANGUAGE plpgsql;
