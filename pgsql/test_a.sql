@@ -60,11 +60,13 @@ CREATE TABLE current_rentals(
     expected_return timestamp,
     actual_return timestamp NULL
 );
-insert into current_rentals values('The Matrix', '111', '2009-02-01','2009-02-16');
-insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
-insert into current_rentals values('Kung Fu Panda', '333', '2010-04-21','2010-05-18');
-insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
-insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
+--insert into current_rentals values('The Matrix', '111', '2009-02-01','2009-02-16');
+insert into current_rentals values('Rambo', '555', '2009-02-11','2009-02-16');
+--insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
+--insert into current_rentals values('Kung Fu Panda', '333', '2010-04-21','2010-05-18');
+--insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
+--insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
+--insert into current_rentals values('Notebook', '222', '2011-08-08','2011-08-13');
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
@@ -223,3 +225,38 @@ BEGIN
     RETURN;        
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TABLE if EXISTS bank_holiday;
+CREATE TABLE bank_holiday(
+	holiday date
+);
+
+insert into bank_holiday values('2009-02-10');
+
+--CREATE or REPLACE FUNCTION unrented_genre(datetime, datetime, genre varchar) RETURNS 
+ select to_char(date, 'Day, dd Month yyyy')
+  2     from
+  3         (select date, movie.genre
+  4         from
+  5             (select date, title, checkout
+  6             from
+  7                 (select date
+  8                 from
+  9                     (select generate_series(0,10) + date '2009-02-01' as date)
+ 10             as dayoff
+ 11             left join bank_holiday bh on bh.holiday=dayoff.date
+ 12             where bh.holiday is null) dates
+ 13             left join
+ 14             (select cr.title, cr.checkout
+ 15                 from current_rentals cr
+ 16                 where cr.checkout between date '2009-02-01' and date '2009-02-12'
+ 17                 union
+ 18                 select hr.title, hr.checkout
+ 19                 from historical_rentals hr
+ 20                 where  hr.checkout between date '2009-02-01' and date '2009-02-12')
+ 21             as rentals
+ 22         on dates.date=rentals.checkout)
+ 23     as all_rentals left join movie
+ 24     on movie.title = all_rentals.title) as results
+ 25 where results.genre <> 'Science Fiction' or results.genre is null;
+

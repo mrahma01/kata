@@ -120,7 +120,8 @@ $$ LANGUAGE plpgsql stable;
 CREATE OR REPLACE FUNCTION no_match() RETURNS SETOF tbl2 AS $$
 BEGIN
     RETURN QUERY 
-        select tbl2.event from tbl2 left join tbl1 on tbl2.event=tbl1.event         where tbl1.event is NULL;
+        select tbl2.event from tbl2 left join tbl1 on tbl2.event=tbl1.event         
+		where tbl1.event is NULL;
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
