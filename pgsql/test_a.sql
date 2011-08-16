@@ -60,13 +60,13 @@ CREATE TABLE current_rentals(
     expected_return timestamp,
     actual_return timestamp NULL
 );
---insert into current_rentals values('The Matrix', '111', '2009-02-01','2009-02-16');
+insert into current_rentals values('The Matrix', '111', '2009-02-01','2009-02-16');
 insert into current_rentals values('Rambo', '555', '2009-02-11','2009-02-16');
---insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
---insert into current_rentals values('Kung Fu Panda', '333', '2010-04-21','2010-05-18');
---insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
---insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
---insert into current_rentals values('Notebook', '222', '2011-08-08','2011-08-13');
+insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
+insert into current_rentals values('Kung Fu Panda', '333', '2010-04-21','2010-05-18');
+insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
+insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
+insert into current_rentals values('Notebook', '222', '2011-08-08','2011-08-13');
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
@@ -233,30 +233,73 @@ CREATE TABLE bank_holiday(
 
 insert into bank_holiday values('2009-02-10');
 
---CREATE or REPLACE FUNCTION unrented_genre(datetime, datetime, genre varchar) RETURNS 
- select to_char(date, 'Day, dd Month yyyy')
-  2     from
-  3         (select date, movie.genre
-  4         from
-  5             (select date, title, checkout
-  6             from
-  7                 (select date
-  8                 from
-  9                     (select generate_series(0,10) + date '2009-02-01' as date)
- 10             as dayoff
- 11             left join bank_holiday bh on bh.holiday=dayoff.date
- 12             where bh.holiday is null) dates
- 13             left join
- 14             (select cr.title, cr.checkout
- 15                 from current_rentals cr
- 16                 where cr.checkout between date '2009-02-01' and date '2009-02-12'
- 17                 union
- 18                 select hr.title, hr.checkout
- 19                 from historical_rentals hr
- 20                 where  hr.checkout between date '2009-02-01' and date '2009-02-12')
- 21             as rentals
- 22         on dates.date=rentals.checkout)
- 23     as all_rentals left join movie
- 24     on movie.title = all_rentals.title) as results
- 25 where results.genre <> 'Science Fiction' or results.genre is null;
+DROP TYPE str_dates CASCADE;
+CREATE TYPE str_dates AS(
+	dates text
+);
+CREATE or REPLACE FUNCTION unrented_genre(varchar, st date DEFAULT NULL, ed date DEFAULT NULL) RETURNS SETOF str_dates AS $$
+DECLARE
+    start_date date;
+    end_date date;
+	duration interval; 
+	days integer;
+BEGIN
+    IF st is NULL THEN
+        start_date := extract(year from now()) || '-' || '01' || '-' || '01';
+    ELSE 
+        start_date := st;
+    END IF;
+        RAISE notice '%', start_date;
+    IF ed is NULL THEN
+        end_date :=  extract(year from now()) || '-' || '12' || '-' || '31';
+    ELSE 
+        end_date := ed;
+    END IF;
+        RAISE notice '%', end_date;
+	duration := age(end_date, start_date);
+        RAISE notice '%', duration;
+	SELECT INTO days floor(EXTRACT('epoch' FROM duration)/86400);
+RETURN QUERY 
+	SELECT 
+			to_char(date, 'Day, dd Month yyyy') 
+	FROM
+	   (SELECT 
+			date
+			FROM
+				(SELECT generate_series(0,days) + start_date as date) as dayoff
+				LEFT OUTER JOIN bank_holiday bh on bh.holiday=dayoff.date
+			WHERE 
+				bh.holiday is null) dates
+			LEFT OUTER JOIN 
+				(SELECT 
+					cr.title, cr.checkout, m.genre
+				 FROM 
+					current_rentals cr,
+					movie m
+				 WHERE
+				    m.title=cr.title  
+				    AND 
+					cr.checkout BETWEEN start_date AND end_date
+					AND
+					m.genre = $1
 
+					UNION
+
+	         		SELECT 
+						hr.title, 
+				 	 	hr.checkout, 
+					 	m.genre
+				   FROM 
+						historical_rentals hr,
+						movie m
+				   WHERE
+					   m.title = hr.title  
+					   AND 
+					   hr.checkout between start_date AND end_date  
+					   AND
+					   m.genre = $1) as rentals ON (rentals.checkout = dates.date)
+	WHERE
+			rentals.genre IS NULL;
+	RETURN;
+END;
+$$ LANGUAGE plpgsql;
