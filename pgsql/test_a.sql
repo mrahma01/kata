@@ -72,7 +72,7 @@ CREATE TABLE historical_rentals (LIKE current_rentals);
 CREATE OR REPLACE FUNCTION new_rental(
     title varchar,
     cust char,
-    rent_date timestamp,
+    checkout timestamp,
     expected_return timestamp
 ) RETURNS void as $$
 BEGIN
@@ -87,7 +87,7 @@ BEGIN
         END;
     END IF;
 
-    insert into current_rentals values(title, cust, rent_date, expected_return);
+    insert into current_rentals values(title, cust, checkout, expected_return);
 
 END;
 $$ LANGUAGE plpgsql;
@@ -103,17 +103,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION archive_rental() RETURNS TRIGGER AS $$
+DECLARE
+	movie_title varchar;
 BEGIN
-    PERFORM cr.title from current_rentals cr join movie 
+	select into movie_title  cr.title from current_rentals cr join movie 
     on cr.title=movie.title join genre 
     on movie.genre=genre.name 
     where genre.name = 
     (select genre from movie 
         where title=NEW.title) and cr.actual_return NOTNULL;
+    
     IF FOUND THEN
         insert into historical_rentals
-        (title,id,rent_date,expected_return,actual_return) 
-        select cr.title,cr.id, cr.rent_date, cr.expected_return,
+        (title,id,checkout,expected_return,actual_return) 
+        select cr.title,cr.id, cr.checkout, cr.expected_return,
         cr.actual_return from current_rentals cr
         join movie 
         on cr.title=movie.title 
@@ -122,6 +125,11 @@ BEGIN
         where genre.name = (select genre from movie where title=NEW.title)
             and cr.id = NEW.id
             and cr.actual_return NOTNULL;
+
+		Delete from current_rentals cr
+		where cr.id = NEW.id 
+		and cr.title = movie_title
+		and cr.actual_return NOTNULL;
     END IF;
     RETURN NEW;
 END;    
@@ -129,7 +137,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER supersed_current_rental
     AFTER INSERT ON current_rentals
-    FOR EACH ROW EXECUTE PROCEDURE archive_rentals();
+    FOR EACH ROW EXECUTE PROCEDURE archive_rental();
 
 DROP type time_delta CASCADE;
 CREATE TYPE time_delta AS
