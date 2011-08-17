@@ -14,13 +14,14 @@ insert into customer values('555', 'Gates', 'Bill', 13);
 
 DROP TABLE IF EXISTS genre CASCADE;
 CREATE TABLE genre (
-    name varchar(50) primary key
+    name varchar(50) primary key,
+    details varchar(100)
 );
 insert into genre values('Action');
 insert into genre values('Science Fiction');
 insert into genre values('Horror');
 insert into genre values('Romance');
-insert into genre values('Comedy');
+insert into genre values('Family');
 
 DROP TABLE IF EXISTS pg_rating CASCADE;
 CREATE TABLE pg_rating(
@@ -45,12 +46,14 @@ insert into movie values('The Matrix', 'Science Fiction', '12');
 insert into movie values('Transformers', 'Science Fiction', '12A');
 insert into movie values('Saw', 'Horror', '18');
 insert into movie values('My Bloody Valentine', 'Horror', '18');
-insert into movie values('Kung Fu Panda', 'Comedy', 'U');
-insert into movie values('Bean the movie', 'Comedy', 'PG');
+insert into movie values('Kung Fu Panda', 'Family', 'U');
+insert into movie values('Bean the movie', 'Family', 'PG');
 insert into movie values('Die Hard', 'Action', '15');
 insert into movie values('Rambo', 'Action', '15');
 insert into movie values('True Romance', 'Romance', '18');
 insert into movie values('Notebook', 'Romance', '12A');
+insert into movie values('Harry Potter', 'Family', 'PG');
+insert into movie values('Narnia', 'Family', 'U');
 
 DROP TABLE IF EXISTS current_rentals;
 CREATE TABLE current_rentals(
@@ -63,10 +66,12 @@ CREATE TABLE current_rentals(
 insert into current_rentals values('The Matrix', '111', '2009-02-01','2009-02-16');
 insert into current_rentals values('Rambo', '555', '2009-02-11','2009-02-16');
 insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
-insert into current_rentals values('Kung Fu Panda', '333', '2010-04-21','2010-05-18');
+insert into current_rentals values('Kung Fu Panda', '333', '2011-08-17','2010-05-18');
 insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
 insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
 insert into current_rentals values('Notebook', '222', '2011-08-08','2011-08-13');
+insert into current_rentals values('Harry Potter', '111', '2011-08-09','2011-08-23');
+insert into current_rentals values('Narnia', '444', '2011-08-17','2011-08-27');
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
@@ -249,15 +254,12 @@ BEGIN
     ELSE 
         start_date := st;
     END IF;
-        RAISE notice '%', start_date;
     IF ed is NULL THEN
         end_date :=  extract(year from now()) || '-' || '12' || '-' || '31';
     ELSE 
         end_date := ed;
     END IF;
-        RAISE notice '%', end_date;
 	duration := age(end_date, start_date);
-        RAISE notice '%', duration;
 	SELECT INTO days floor(EXTRACT('epoch' FROM duration)/86400);
 RETURN QUERY 
 	SELECT 
@@ -301,5 +303,82 @@ RETURN QUERY
 	WHERE
 			rentals.genre IS NULL;
 	RETURN;
+END;
+$$  LANGUAGE plpgsql;
+
+DROP TYPE promo_type CASCADE;
+CREATE TYPE promo_type as(
+    dates date,
+    day_name text,
+    count bigint
+);
+
+CREATE or REPLACE FUNCTION promo_report(date, date) RETURNS SETOF promo_type AS $$
+BEGIN
+    RETURN QUERY
+        SELECT 
+            promo.date, 
+            promo.day_name,
+            count(tr.checkout) 
+        from
+            (select 
+                cr.title, 
+                cr.checkout
+            from 
+                current_rentals cr
+            where 
+                cr.checkout between $1 AND $2
+
+            UNION
+
+            select 
+                hr.title, 
+                hr.checkout
+            from 
+                historical_rentals hr
+            where 
+                hr.checkout between $1 AND $2) as tr
+            JOIN 
+                movie m 
+            on 
+                m.title=tr.title and m.genre='Family'
+            RIGHT OUTER JOIN 
+                (select
+                    generate_series(0,20)+ $1 as date,
+                    to_char(generate_series(0,20) + $1, 'Day') as day_name) as promo 
+                    on 
+                        tr.checkout = promo.date
+        where 
+            promo.day_name LIKE 'Tuesday%' or promo.day_name LIKE 'Wednesday%'
+        group by 
+            promo.date, promo.day_name
+        order by 
+        promo.date;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TABLE IF EXISTS query_return CASCADE; 
+CREATE TABLE query_return(
+    id int primary key,
+    name varchar(100)
+);
+INSERT INTO query_return values(1, 'jav');
+INSERT INTO query_return values(2, 'seb');
+INSERT INTO query_return values(3, 'mo');
+
+CREATE or REPLACE FUNCTION return_query() RETURNS SETOF query_return as $$
+BEGIN
+    RETURN QUERY
+        SELECT * from query_return;
+    RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE or REPLACE FUNCTION genre_test() RETURNS SETOF genre AS $$
+BEGIN
+    RETURN QUERY 
+        select * from genre;
+    RETURN;
 END;
 $$ LANGUAGE plpgsql;
