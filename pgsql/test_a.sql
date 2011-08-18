@@ -68,10 +68,11 @@ insert into current_rentals values('Rambo', '555', '2009-02-11','2009-02-16');
 insert into current_rentals values('Saw', '222', '2008-03-11','2008-03-26');
 insert into current_rentals values('Kung Fu Panda', '333', '2011-08-17','2010-05-18');
 insert into current_rentals values('My Bloody Valentine', '444', '2011-02-11','2011-02-26');
-insert into current_rentals values('True Romance', '555', '2011-08-08','2011-08-13');
+insert into current_rentals values('True Romance', '555', '2011-04-08','2011-08-13');
 insert into current_rentals values('Notebook', '222', '2011-08-08','2011-08-13');
 insert into current_rentals values('Harry Potter', '111', '2011-08-09','2011-08-23');
 insert into current_rentals values('Narnia', '444', '2011-08-17','2011-08-27');
+insert into current_rentals values('Bean the movie', '444', '2011-08-17','2011-08-27');
 
 DROP TABLE IF EXISTS historical_rentals;
 CREATE TABLE historical_rentals (LIKE current_rentals);
@@ -175,37 +176,55 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF DATE as $$
+CREATE OR REPLACE FUNCTION array_median(timestamp[]) RETURNS timestamp AS $$
+SELECT CASE 
+    WHEN mod(array_upper($1,1),2) = 1 THEN 
+        asorted[ceiling(array_upper(asorted,1)/2.0)] 
+    ELSE 
+
+        asorted[ceiling(array_upper(asorted,1)/2.0)] + 
+        age(asorted[ceiling(array_upper(asorted,1)/2.0)+1], asorted[ceiling(array_upper(asorted,1)/2.0)])/2
+    END
+    FROM 
+        (SELECT 
+            ARRAY
+                (SELECT 
+                    ($1)[n] 
+                FROM
+                    generate_series(1, array_upper($1, 1)) AS n
+                WHERE ($1)[n] IS NOT NULL
+                ORDER BY ($1)[n]
+                ) As asorted
+        ) As median;
+$$
+LANGUAGE 'sql' IMMUTABLE;
+
+DROP AGGREGATE IF EXISTS median(timestamp);
+CREATE AGGREGATE median(timestamp) (
+      SFUNC=array_append,
+      STYPE=timestamp[],
+      FINALFUNC=array_median
+);
+
+DROP TYPE aggr_dates CASCADE;
+CREATE TYPE aggr_dates AS(
+    min date,
+    max date,
+    median date
+);
+
+CREATE OR REPLACE FUNCTION aggr_date() RETURNS SETOF aggr_dates as $$
 DECLARE
-    total integer;
-    lower_median date;
-    higher_median date;
+    r aggr_dates%ROWTYPE;
 BEGIN
-    total := count(*) from current_rentals;
-    RETURN NEXT min(date(checkout)) from current_rentals;
-    RETURN NEXT max(date(checkout)) from current_rentals;
-    if mod(total, 2) = 1 then
-        RETURN NEXT date(checkout) 
-            from (select row_number() 
-            over (order by checkout) as row, checkout
-            from current_rentals) as tableone
-            where row=(select count(*)/2+1 from current_rentals);
-        
-    else 
-        lower_median := date(checkout) 
-            from (select row_number() 
-            over (order by checkout) as row, checkout
-            from current_rentals) as tableone
-            where row=(select count(*)/2 from current_rentals);
-        higher_median := date(checkout) 
-            from (select row_number() 
-            over (order by checkout) as row, checkout
-            from current_rentals) as tableone
-            where row=(select count(*)/2+1 from current_rentals);            
-        RETURN NEXT lower_median + age(higher_median, lower_median)/2;
-    end if;
+    FOR r in
+        select min(date(checkout)), max(date(checkout)), date(median(checkout)) from current_rentals
+    LOOP
+        return NEXT r;
+    end loop;
+    return;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql rows 1;
 
 DROP TYPE holder CASCADE;
 CREATE TYPE holder AS(
@@ -319,7 +338,7 @@ BEGIN
         SELECT 
             promo.date, 
             promo.day_name,
-            count(tr.checkout) 
+            COALESCE(count(tr.checkout),0) 
         from
             (select 
                 cr.title, 
