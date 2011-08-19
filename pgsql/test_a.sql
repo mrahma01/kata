@@ -340,11 +340,19 @@ BEGIN
             promo.day_name,
             COALESCE(count(tr.checkout),0) 
         from
+            (select
+                generate_series(0,20)+ $1 as date,
+                to_char(generate_series(0,20) + $1, 'Day') as day_name) as promo 
+        LEFT OUTER JOIN 
             (select 
                 cr.title, 
                 cr.checkout
             from 
                 current_rentals cr
+            JOIN 
+                movie m 
+            on 
+                m.title=cr.title and m.genre='Family'
             where 
                 cr.checkout between $1 AND $2
 
@@ -355,18 +363,14 @@ BEGIN
                 hr.checkout
             from 
                 historical_rentals hr
-            where 
-                hr.checkout between $1 AND $2) as tr
             JOIN 
                 movie m 
             on 
-                m.title=tr.title and m.genre='Family'
-            RIGHT OUTER JOIN 
-                (select
-                    generate_series(0,20)+ $1 as date,
-                    to_char(generate_series(0,20) + $1, 'Day') as day_name) as promo 
-                    on 
-                        tr.checkout = promo.date
+                m.title=hr.title and m.genre='Family'
+            where 
+                hr.checkout between $1 AND $2) as tr
+        on 
+            tr.checkout = promo.date
         where 
             promo.day_name LIKE 'Tuesday%' or promo.day_name LIKE 'Wednesday%'
         group by 
