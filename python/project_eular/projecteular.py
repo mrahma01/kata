@@ -44,3 +44,14 @@ class ProjectEular(object):
                     num = num/n
                     result.append(n)
         return result
+
+    def palindrome(self):
+        print 'test'
+
+def fun(c):
+    c = str(c)
+    if len(c) < 2:
+        return False    
+    size = len(c)
+    if fun(c[0]) == fun(size):
+        return 'foo'
