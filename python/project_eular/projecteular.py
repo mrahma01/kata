@@ -1,4 +1,5 @@
 from lrange import lrange
+import sys
 
 class ProjectEular(object):
     def problem_1(self, number):
@@ -46,12 +47,25 @@ class ProjectEular(object):
         return result
 
     def palindrome(self):
-        print 'test'
+        """
+        Find the largest palindrome made from the product of two 3-digit numbers.
+        """
+        list = []
+        for i in range(1000,100,-1):
+            for j in range(1000,100,-1):
+                if is_palindrome(i*j):
+                    list.append(i*j)
+                    break
+        print "The largest palindrome made from the product of two 3-digit numbers is %s" %max(list)
 
-def fun(c):
+def is_palindrome(c):
     c = str(c)
     if len(c) < 2:
-        return False    
+        return True
     size = len(c)
-    if fun(c[0]) == fun(size):
-        return 'foo'
+    if c[0] != c[size-1]:
+        return False
+    else:
+        c = c[1:size -1]
+        return is_palindrome(c)
+    return True
